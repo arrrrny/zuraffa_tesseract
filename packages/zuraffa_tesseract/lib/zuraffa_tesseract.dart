@@ -6,6 +6,7 @@
 /// `zuraffa_tesseract_platform`.
 library;
 
+export 'src/tesseract_engine.dart';
 export 'src/tesseract_exception.dart';
 export 'src/tesseract_model.dart';
 export 'src/tesseract_port.dart';

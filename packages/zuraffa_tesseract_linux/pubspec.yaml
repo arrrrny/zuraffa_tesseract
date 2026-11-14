@@ -1,11 +1,10 @@
 name: zuraffa_tesseract_linux
 description: >-
   Tesseract OCR adapter for Linux: bridges zuraffa_tesseract to the
-  tesseract_ocr Linux plugin (system tesseract via C++ interop) over a typed
-  method channel.
-version: 1.0.0
+  tesseract_ocr Linux plugin (the system tesseract library via C++ interop)
+  over a typed method channel.
+version: 7.4.2
 homepage: https://zuraffa.com
-publish_to: none
 
 resolution: workspace
 
@@ -17,10 +16,8 @@ dependencies:
   flutter:
     sdk: flutter
   zuraffa: ^7.4.2
-  zuraffa_tesseract:
-    path: ../zuraffa_tesseract
-  zuraffa_tesseract_platform:
-    path: ../zuraffa_tesseract_platform
+  zuraffa_tesseract: ^7.4.2
+  zuraffa_tesseract_platform: ^7.4.2
 
 dev_dependencies:
   flutter_test:

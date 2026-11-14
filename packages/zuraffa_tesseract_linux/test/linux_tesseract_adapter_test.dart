@@ -1,5 +1,5 @@
-// Adapter tests over a fake injected channel (success, taxonomy, timeout,
-// unwired) — no platform required.
+// Adapter tests over a fake injected channel (success, empty result, taxonomy,
+// timeout, engine gate, unwired) — no platform required.
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -9,24 +9,13 @@ import 'package:zuraffa_tesseract_linux/zuraffa_tesseract_linux.dart';
 
 void main() {
   group('LinuxTesseractAdapter', () {
-    test('isSupported decodes the native payload', () async {
-      final channel = LinuxTesseractChannel(
-        invoke: (_, __) async => <String, Object?>{'supported': true},
-      );
-      final port = LinuxTesseractPort(channel: channel);
-
-      expect(await port.isSupported(), isTrue);
-    });
-
     test('recognize decodes the extracted text', () async {
-      final channel = LinuxTesseractChannel(
-        invoke: (method, args) async {
-          expect(method, 'extractText');
-          expect(args['imagePath'], '/tmp/shot.png');
-          expect(args['language'], 'eng');
-          return <String, Object?>{'text': 'hello world'};
-        },
-      );
+      final channel = LinuxTesseractChannel(invoke: (method, args) async {
+        expect(method, 'extractText');
+        expect(args['imagePath'], '/tmp/shot.png');
+        expect(args['language'], 'eng');
+        return <String, Object?>{'text': 'hello world'};
+      });
       final port = LinuxTesseractPort(channel: channel);
 
       final result = await port.recognize(
@@ -38,10 +27,22 @@ void main() {
       expect(result.isEmpty, isFalse);
     });
 
-    test('a null text payload decodes as empty, not an error', () async {
+    test('an empty result decodes as empty, not an error', () async {
       final channel = LinuxTesseractChannel(
-        invoke: (_, __) async => <String, Object?>{},
+        invoke: (_, __) async => <String, Object?>{'text': ''});
+      final port = LinuxTesseractPort(channel: channel);
+
+      final result = await port.recognize(
+        modelId: 'eng',
+        request: const TesseractRequest(image: '/tmp/blank.png'),
       );
+
+      expect(result.isEmpty, isTrue);
+    });
+
+    test('a null payload decodes as empty, not a malformed response',
+        () async {
+      final channel = LinuxTesseractChannel(invoke: (_, __) async => null);
       final port = LinuxTesseractPort(channel: channel);
 
       final result = await port.recognize(
@@ -55,12 +56,10 @@ void main() {
     test('loadModel rejects empty traineddata before touching the channel',
         () async {
       var calls = 0;
-      final channel = LinuxTesseractChannel(
-        invoke: (_, __) async {
-          calls++;
-          return <String, Object?>{};
-        },
-      );
+      final channel = LinuxTesseractChannel(invoke: (_, __) async {
+        calls++;
+        return '';
+      });
       final port = LinuxTesseractPort(channel: channel);
 
       await expectLater(
@@ -72,14 +71,14 @@ void main() {
     });
 
     test('native error payloads surface as typed failures', () async {
-      final channel = LinuxTesseractChannel(
-        invoke: (_, __) async => <String, Object?>{
+      final channel = LinuxTesseractChannel(invoke: (_, __) async {
+        return <String, Object?>{
           'error': <String, Object?>{
             'code': 'TESSDATA_NOT_FOUND',
             'message': 'no eng.traineddata',
           },
-        },
-      );
+        };
+      });
       final port = LinuxTesseractPort(channel: channel);
 
       await expectLater(
@@ -94,11 +93,11 @@ void main() {
     });
 
     test('a recoverable native code is marked recoverable', () async {
-      final channel = LinuxTesseractChannel(
-        invoke: (_, __) async => <String, Object?>{
+      final channel = LinuxTesseractChannel(invoke: (_, __) async {
+        return <String, Object?>{
           'error': <String, Object?>{'code': 'OCR_TIMEOUT', 'message': 'slow'},
-        },
-      );
+        };
+      });
       final port = LinuxTesseractPort(channel: channel);
 
       await expectLater(
@@ -112,13 +111,10 @@ void main() {
       );
     });
 
-    test('a recognition past the timeout is a recoverable timeout',
-        () async {
+    test('a recognition past the timeout is a recoverable timeout', () async {
       final channel = LinuxTesseractChannel(
-        invoke: (_, __) => Future<Object?>.delayed(
-          const Duration(seconds: 5),
-          () => <String, Object?>{'text': 'late'},
-        ),
+        invoke: (_, __) =>
+            Future<String>.delayed(const Duration(seconds: 5), () => 'late'),
         timeout: const Duration(milliseconds: 50),
       );
       final port = LinuxTesseractPort(channel: channel);
@@ -134,18 +130,62 @@ void main() {
       );
     });
 
-    test('registerLinuxTesseractDependencies resolves over the wired port',
-        () async {
+    test('vision is rejected before the transport is touched', () async {
+      var calls = 0;
+      final channel = LinuxTesseractChannel(invoke: (_, __) async {
+        calls++;
+        return 'should not run';
+      });
+      final port = LinuxTesseractPort(channel: channel);
+
+      await expectLater(
+        () => port.recognize(
+          modelId: 'eng',
+          request: const TesseractRequest(
+            image: '/tmp/a.png',
+            engine: TesseractEngine.vision,
+          ),
+        ),
+        throwsA(isA<TesseractException>()
+            .having((e) => e.code, 'code', 'unsupported_engine')
+            .having((e) => e.recoverable, 'recoverable', isFalse)),
+      );
+      expect(calls, 0, reason: 'the native side never sees a vision request');
+    });
+
+    test('the selected engine reaches the channel', () async {
+      String? seen;
+      final channel = LinuxTesseractChannel(invoke: (_, args) async {
+        seen = args['engine'] as String?;
+        return <String, Object?>{'text': 'ok'};
+      });
+      final port = LinuxTesseractPort(channel: channel);
+
+      await port.recognize(
+        modelId: 'eng',
+        request: const TesseractRequest(
+          image: '/tmp/a.png',
+          engine: TesseractEngine.tesseract,
+        ),
+      );
+
+      expect(seen, 'tesseract');
+    });
+
+    test('registerLinuxTesseractDependencies resolves over the wired channel', () async {
       final getIt = GetIt.instance..reset();
       registerLinuxTesseractDependencies(
         getIt,
         channel: LinuxTesseractChannel(
-          invoke: (_, __) async => <String, Object?>{'supported': true},
-        ),
+            invoke: (_, __) async => <String, Object?>{'text': 'ok'}),
       );
 
       final port = getIt<TesseractPort>();
-      expect(await port.isSupported(), isTrue);
+      final result = await port.recognize(
+        modelId: 'eng',
+        request: const TesseractRequest(image: '/tmp/a.png'),
+      );
+      expect(result.text, 'ok');
 
       getIt.reset();
     });
@@ -158,7 +198,10 @@ void main() {
       final port = getIt<TesseractPort>();
 
       await expectLater(
-        () => port.isSupported(),
+        () => port.recognize(
+          modelId: 'eng',
+          request: const TesseractRequest(image: '/tmp/a.png'),
+        ),
         throwsA(isA<TesseractException>()
             .having((e) => e.code, 'code', 'channel_not_wired')),
       );

@@ -44,6 +44,10 @@ class DarwinTesseractPort implements TesseractPort {
     required String modelId,
     required TesseractRequest request,
   }) async {
+    // Vision is allowed here but only on iOS. One plugin serves both
+    // platforms (`sharedDarwinSource`), so the split is made natively: the
+    // Swift side returns `UNSUPPORTED_ENGINE` on macOS, which the channel's
+    // taxonomy maps to a non-recoverable TesseractException.
     final result = await channel.call('extractText', request.encode());
     return TesseractText.decode(result?['text']);
   }

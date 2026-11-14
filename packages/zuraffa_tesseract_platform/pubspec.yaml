@@ -1,9 +1,9 @@
 name: zuraffa_tesseract_platform
 description: >-
-  Platform interface and shared channel envelope for zuraffa_tesseract adapters.
-version: 1.0.0
+  Shared channel envelope for the zuraffa_tesseract adapters: the timeout,
+  the native error taxonomy hook, and single-completion.
+version: 7.4.2
 homepage: https://zuraffa.com
-publish_to: none
 
 resolution: workspace
 
@@ -11,9 +11,7 @@ environment:
   sdk: ^3.11.0
 
 dependencies:
-  zuraffa: ^7.4.2
-  zuraffa_tesseract:
-    path: ../zuraffa_tesseract
+  zuraffa_tesseract: ^7.4.2
 
 dev_dependencies:
   lints: ^4.0.0

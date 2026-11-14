@@ -1,11 +1,9 @@
 name: zuraffa_tesseract
 description: >-
-  Typed OCR support for the Zuraffa ecosystem: Tesseract engine integration,
-  recognition lifecycle, and typed failures behind an injected platform channel
-  with federated adapters.
-version: 1.0.0
+  Typed Tesseract OCR for the Zuraffa ecosystem: a pure-Dart port, a model
+  lifecycle facade, and typed failures behind an injected platform channel.
+version: 7.4.2
 homepage: https://zuraffa.com
-publish_to: none
 
 resolution: workspace
 

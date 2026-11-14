@@ -42,8 +42,22 @@ class LinuxTesseractPort implements TesseractPort {
     required String modelId,
     required TesseractRequest request,
   }) async {
+    _rejectUnsupportedEngine(request);
     final result = await channel.call('extractText', request.encode());
     return TesseractText.decode(result?['text']);
+  }
+
+  /// Apple Vision ships only in the iOS plugin, so asking for it here is a
+  /// caller error — fail before the channel rather than letting the native
+  /// side silently fall back to Tesseract.
+  void _rejectUnsupportedEngine(TesseractRequest request) {
+    if (!request.usesVision) return;
+    throw TesseractEngineException(
+      'unsupported_engine',
+      'OCREngine.vision is only supported on iOS. '
+      'Use TesseractEngine.tesseract or TesseractEngine.defaultEngine on '
+      'Linux.',
+    );
   }
 
   @override

@@ -1,3 +1,4 @@
+import 'tesseract_engine.dart';
 import 'tesseract_exception.dart';
 
 /// A Tesseract language model loaded into the engine, bound to [id] until
@@ -32,8 +33,13 @@ class TesseractRequest {
   /// Language codes joined with `+` (e.g. `eng`, `eng+tur`).
   final String language;
 
+  /// Which engine to use. Defaults to the platform default — Vision on iOS,
+  /// Tesseract elsewhere.
+  final TesseractEngine engine;
+
   /// Tesseract variables passed straight through to the engine
-  /// (`preserve_interword_spaces`, `tessedit_pageseg_mode`, …).
+  /// (`preserve_interword_spaces`, `tessedit_pageseg_mode`, …). Ignored when
+  /// [engine] is [TesseractEngine.vision].
   final Map<String, String> options;
 
   /// Directory holding the `.traineddata` files. Null lets the adapter
@@ -43,21 +49,30 @@ class TesseractRequest {
   const TesseractRequest({
     required this.image,
     this.language = 'eng',
+    this.engine = TesseractEngine.defaultEngine,
     this.options = const <String, String>{},
     this.tessDataPath,
   });
 
+  /// Whether this request asks for Apple Vision.
+  bool get usesVision => engine == TesseractEngine.vision;
+
   /// Encodes this request into the channel argument map.
+  ///
+  /// `engine` goes at the top level because that is where the native plugins
+  /// read it; the Tesseract variables stay under `options`.
   Map<String, Object?> encode() => <String, Object?>{
         'imagePath': image,
         'language': language,
+        'engine': engine.wireValue,
         if (tessDataPath != null) 'tessData': tessDataPath,
         if (options.isNotEmpty) 'options': options,
       };
 
   @override
-  String toString() =>
-      'TesseractRequest($image, lang: $language, ${options.length} options)';
+  String toString() => 'TesseractRequest($image, '
+      'engine: ${engine.wireValue}, lang: $language, '
+      '${options.length} options)';
 }
 
 /// Exception thrown when the requested language model is not usable.

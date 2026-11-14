@@ -8,7 +8,10 @@ environment:
 workspace:
   - packages/zuraffa_tesseract
   - packages/zuraffa_tesseract_platform
+  - packages/zuraffa_tesseract_android
   - packages/zuraffa_tesseract_darwin
+  - packages/zuraffa_tesseract_linux
+  - packages/zuraffa_tesseract_web
 
 dev_dependencies:
   lints: ^4.0.0

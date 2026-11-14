@@ -15,9 +15,9 @@ which implements the port over an injected channel.
 | `zuraffa_tesseract` | Pure-Dart port, facade, typed exceptions, DI | ✅ |
 | `zuraffa_tesseract_platform` | Shared channel envelope (timeout, error taxonomy, single-completion) | ✅ |
 | `zuraffa_tesseract_darwin` | iOS + macOS adapter (SwiftyTesseract 4.0.1+ via SPM) | ✅ |
-| `zuraffa_tesseract_android` | Android adapter (Tesseract4Android) | planned |
-| `zuraffa_tesseract_web` | Web adapter (tesseract.js) | planned |
-| `zuraffa_tesseract_linux` | Linux adapter (system tesseract via C++ interop) | planned |
+| `zuraffa_tesseract_android` | Android adapter (Tesseract4Android) | ✅ |
+| `zuraffa_tesseract_web` | Web adapter (tesseract.js WebAssembly) | ✅ |
+| `zuraffa_tesseract_linux` | Linux adapter (system tesseract via C++ interop) | ✅ |
 
 ## Contract
 
@@ -48,7 +48,8 @@ import 'package:zuraffa/zuraffa.dart';
 import 'package:zuraffa_tesseract/zuraffa_tesseract.dart';
 import 'package:zuraffa_tesseract_darwin/zuraffa_tesseract_darwin.dart';
 
-// Wire the platform adapter once, at startup.
+// Wire the adapter for the running platform once, at startup
+// (…_android / …_web / …_linux are the other three).
 registerDarwinTesseractDependencies(getIt);
 
 final ocr = getIt<TesseractService>();
@@ -78,7 +79,7 @@ rather than a null dereference.
 
 ```sh
 dart test -j 2                    # core + platform envelope
-flutter test --concurrency=2      # adapters
+flutter test --concurrency=2      # each adapter package
 ```
 
 Concurrency is capped at 2 — this repo is developed on the shared pool host.

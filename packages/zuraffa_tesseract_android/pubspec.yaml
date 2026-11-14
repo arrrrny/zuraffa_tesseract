@@ -1,0 +1,45 @@
+name: zuraffa_tesseract_android
+description: >-
+  Tesseract OCR adapter for Android: bridges zuraffa_tesseract to the
+  tesseract_ocr Android plugin (Tesseract4Android) over a typed method
+  channel.
+version: 1.0.0
+homepage: https://zuraffa.com
+publish_to: none
+
+resolution: workspace
+
+environment:
+  sdk: ^3.11.0
+  flutter: ">=3.19.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  zuraffa: ^7.4.2
+  zuraffa_tesseract:
+    path: ../zuraffa_tesseract
+  zuraffa_tesseract_platform:
+    path: ../zuraffa_tesseract_platform
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  lints: ^4.0.0
+  test: ^1.25.0
+
+repository: https://github.com/arrrrny/zuraffa_tesseract
+issue_tracker: https://github.com/arrrrny/zuraffa_tesseract/issues
+
+topics:
+  - ocr
+  - tesseract
+  - android
+  - zuraffa
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: io.paratoner.tesseract_ocr
+        pluginClass: TesseractOcrPlugin

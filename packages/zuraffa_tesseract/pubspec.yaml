@@ -1,0 +1,26 @@
+name: zuraffa_tesseract
+description: >-
+  Typed OCR support for the Zuraffa ecosystem: Tesseract engine integration,
+  recognition lifecycle, and typed failures behind an injected platform channel
+  with federated adapters.
+version: 1.0.0
+homepage: https://zuraffa.com
+
+environment:
+  sdk: ^3.11.0
+
+dependencies:
+  zuraffa: ^7.4.2
+
+dev_dependencies:
+  lints: ^4.0.0
+  test: ^1.25.0
+
+repository: https://github.com/arrrrny/zuraffa_tesseract
+issue_tracker: https://github.com/arrrrny/zuraffa_tesseract/issues
+
+topics:
+  - ocr
+  - tesseract
+  - zuraffa
+  - clean-architecture

@@ -1,0 +1,25 @@
+name: zuraffa_tesseract_platform
+description: >-
+  Platform interface and shared channel envelope for zuraffa_tesseract adapters.
+version: 1.0.0
+homepage: https://zuraffa.com
+
+environment:
+  sdk: ^3.11.0
+
+dependencies:
+  zuraffa: ^7.4.2
+  zuraffa_tesseract: ^1.0.0
+
+dev_dependencies:
+  lints: ^4.0.0
+  test: ^1.25.0
+
+repository: https://github.com/arrrrny/zuraffa_tesseract
+issue_tracker: https://github.com/arrrrny/zuraffa_tesseract/issues
+
+topics:
+  - ocr
+  - tesseract
+  - zuraffa
+  - clean-architecture

@@ -1,0 +1,14 @@
+name: zuraffa_tesseract_workspace
+description: Workspace for zuraffa_tesseract federated plugin
+publish_to: none
+
+environment:
+  sdk: ^3.11.0
+
+workspace:
+  - packages/zuraffa_tesseract
+  - packages/zuraffa_tesseract_platform
+
+dev_dependencies:
+  lints: ^4.0.0
+  test: ^1.25.0

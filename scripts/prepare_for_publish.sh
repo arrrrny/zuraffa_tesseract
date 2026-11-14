@@ -51,6 +51,10 @@ if [ -z "$ENTRY" ]; then
 fi
 for pkg in "zuraffa_tesseract" "zuraffa_tesseract_platform" "zuraffa_tesseract_darwin" "zuraffa_tesseract_android" "zuraffa_tesseract_web" "zuraffa_tesseract_linux"; do
     f="packages/$pkg/CHANGELOG.md"
+    # Seed the file first: `cat - "$f"` exits non-zero when the package has no
+    # changelog yet, which used to short-circuit the `&& mv` and leave only a
+    # stray $f.tmp behind.
+    [ -f "$f" ] || : > "$f"
     grep -q "^## $VERSION" "$f" && continue
     printf '%s\n\n' "$ENTRY" | cat - "$f" > "$f.tmp" && mv "$f.tmp" "$f"
 done

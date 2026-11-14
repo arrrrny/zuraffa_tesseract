@@ -1,72 +1,88 @@
 # zuraffa_tesseract
 
-Tesseract OCR implementation for the Zuraffa ecosystem.
+Tesseract OCR for the Zuraffa ecosystem — a federated plugin covering
+Android, iOS, macOS, Web, and Linux.
 
-A federated plugin that provides OCR capabilities across all platforms (Android, iOS, macOS, Web, Linux) using Tesseract.
+The package is an **abstraction**: a pure-Dart port (`TesseractPort`), a facade
+(`TesseractService`) that owns the loaded-model registry, typed failures, and
+DI registration. The actual OCR work happens in platform adapters, each of
+which implements the port over an injected channel.
 
 ## Packages
 
-- `zuraffa_tesseract` - Pure Dart core with typed exceptions and lifecycle management
-- `zuraffa_tesseract_platform` - Platform interface and shared envelope
-- `zuraffa_tesseract_android` - Android implementation (Tesseract4Android)
-- `zuraffa_tesseract_ios` - iOS implementation (SwiftyTesseract via SPM)
-- `zuraffa_tesseract_macos` - macOS implementation (SwiftyTesseract via SPM)
-- `zuraffa_tesseract_web` - Web implementation (tesseract.js)
-- `zuraffa_tesseract_linux` - Linux implementation (system tesseract via C++)
+| Package | Role | Status |
+|---|---|---|
+| `zuraffa_tesseract` | Pure-Dart port, facade, typed exceptions, DI | ✅ |
+| `zuraffa_tesseract_platform` | Shared channel envelope (timeout, error taxonomy, single-completion) | ✅ |
+| `zuraffa_tesseract_darwin` | iOS + macOS adapter (SwiftyTesseract 4.0.1+ via SPM) | ✅ |
+| `zuraffa_tesseract_android` | Android adapter (Tesseract4Android) | planned |
+| `zuraffa_tesseract_web` | Web adapter (tesseract.js) | planned |
+| `zuraffa_tesseract_linux` | Linux adapter (system tesseract via C++ interop) | planned |
 
-## Architecture
+## Contract
 
-This package follows the same federated architecture as `zuraffa_ocr`:
-
-- **Pure Dart core** (`OcrPort`, `OcrService`) - platform-agnostic
-- **WASM-style lifecycle** - compile/invoke/unload modules
-- **Typed exceptions** - error handling with recovery hints
-- **Zuraffa DI integration** - works with GetIt
-
-## Installation
-
-```yaml
-dependencies:
-  zuraffa_tesseract: ^1.0.0
-  # Platform adapter (automatically selected)
-  zuraffa_tesseract_android: ^1.0.0  # or ios, macos, web, linux
+```dart
+abstract class TesseractPort {
+  Future<bool> isSupported();
+  Future<TesseractModel> loadModel({required String id, required Uint8List bytes});
+  Future<TesseractText> recognize({
+    required String modelId,
+    required TesseractRequest request,
+  });
+  Future<void> unloadModel({required String id});
+}
 ```
+
+`TesseractRequest` carries the image reference (a path, or a
+`blob:`/`data:`/`http(s)` URL on web), the language codes (`eng`, `eng+tur`),
+the raw Tesseract variables, and an optional tessdata override.
+
+`TesseractService` adds the lifecycle rules the platform cannot be trusted to
+enforce: a double `loadModel` is `already_loaded`, a `recognize` before its
+load is `not_loaded`, and both fail before the channel is touched.
 
 ## Usage
 
 ```dart
+import 'package:zuraffa/zuraffa.dart';
 import 'package:zuraffa_tesseract/zuraffa_tesseract.dart';
+import 'package:zuraffa_tesseract_darwin/zuraffa_tesseract_darwin.dart';
 
-// Get the service from DI
-final ocrService = getIt<OcrService>();
+// Wire the platform adapter once, at startup.
+registerDarwinTesseractDependencies(getIt);
 
-// Compile a Tesseract module
-final module = await ocrService.compile(
-  id: 'tesseract',
-  bytes: tesseractWasmBytes,
+final ocr = getIt<TesseractService>();
+await ocr.loadModel(id: 'eng', bytes: engTrainedData);
+final text = await ocr.recognize(
+  modelId: 'eng',
+  request: const TesseractRequest(image: '/tmp/shot.png', language: 'eng'),
 );
-
-// Perform OCR
-final result = await ocrService.call(
-  id: 'tesseract',
-  export: 'recognize',
-  args: [OcrValue.string(imagePath)],
-);
-
-// Cleanup
-await ocrService.unload(id: 'tesseract');
 ```
 
-## Platform Support
+Without a wired adapter every call raises a typed `port_not_wired` failure
+rather than a null dereference.
 
-| Platform | Implementation | Status |
-|----------|---------------|--------|
-| Android | Tesseract4Android | ✅ Ready |
-| iOS | SwiftyTesseract 4.0.1+ (SPM) | ✅ Ready |
-| macOS | SwiftyTesseract 4.0.1+ (SPM) | ✅ Ready |
-| Web | tesseract.js 6.0.1 | ✅ Ready |
-| Linux | System tesseract (C++) | ✅ Ready |
+## Design notes
+
+- **One completion, exactly once.** Recognition is a timeout race: the engine
+  can finish as the deadline fires. `TesseractPlatformEnvelope` serialises the
+  result so the channel answers once, and turns the overrun into a
+  recoverable `timeout`.
+- **The core invents no exception types.** Each adapter supplies its own
+  factory and taxonomy hook, so a caller catches `TesseractException` without
+  knowing which platform produced it.
+- **Fix at the package layer.** A defect in an adapter is fixed in that
+  adapter, not patched around in a consumer app.
+
+## Testing
+
+```sh
+dart test -j 2                    # core + platform envelope
+flutter test --concurrency=2      # adapters
+```
+
+Concurrency is capped at 2 — this repo is developed on the shared pool host.
 
 ## License
 
-BSD 3-Clause License
+BSD 3-Clause. See [LICENSE](../LICENSE).

@@ -1,5 +1,5 @@
 name: zuraffa_tesseract_workspace
-description: Workspace for zuraffa_tesseract federated plugin
+description: Workspace for the zuraffa_tesseract federated plugin.
 publish_to: none
 
 environment:
@@ -8,6 +8,7 @@ environment:
 workspace:
   - packages/zuraffa_tesseract
   - packages/zuraffa_tesseract_platform
+  - packages/zuraffa_tesseract_darwin
 
 dev_dependencies:
   lints: ^4.0.0

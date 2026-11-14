@@ -1,0 +1,18 @@
+# Dart / Flutter
+.dart_tool/
+.packages
+build/
+pubspec.lock
+
+# Generated plugin registrants and platform build output
+**/Flutter/ephemeral/
+**/Pods/
+**/DerivedData/
+**/xcuserdata/
+**/dgph
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store

@@ -3,13 +3,17 @@ description: >-
   Platform interface and shared channel envelope for zuraffa_tesseract adapters.
 version: 1.0.0
 homepage: https://zuraffa.com
+publish_to: none
+
+resolution: workspace
 
 environment:
   sdk: ^3.11.0
 
 dependencies:
   zuraffa: ^7.4.2
-  zuraffa_tesseract: ^1.0.0
+  zuraffa_tesseract:
+    path: ../zuraffa_tesseract
 
 dev_dependencies:
   lints: ^4.0.0
